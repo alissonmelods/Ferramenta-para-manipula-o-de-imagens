@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+	<meta charset="utf-8">
+	
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+
+    <title>Projeto CG</title>
+
+    <meta charset="windows-1252">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.rawgit.com/oliver-moran/jimp/v0.2.27/browser/lib/jimp.min.js"></script>
+    
+    <script type="text/javascript">
+        var imgAuxA = null;
+        var imgAuxB = null;
+        var imgAuxC = null;
+        function mostrarImagem(element, valor) {
+          var arquivo = element.files[0];
+          var reader = new FileReader();
+          reader.readAsArrayBuffer(arquivo);
+          reader.addEventListener('load', function(){
+            Jimp.read(this.result)
+              .then(function(imagem){
+                imagem = imagem.resize(270, 200);
+                if(valor == 1){
+                    imgAuxA = imagem;
+                }else if(valor == 2){
+                    imgAuxB = imagem;
+                }
+                
+                exibirImagem(imagem, valor);
+              })
+              .catch(function(erro){
+                console.log('Não foi possível processar os dados da imagem.');
+              });
+          });
+        }
+
+        function exibirImagem(imagem, acao) {
+          imagem.getBase64(Jimp.MIME_JPEG, function(err, src){
+                if (acao == 1) {
+                    var img = document.getElementById('display1');
+                    img.setAttribute('src', src);
+                }
+                else if(acao == 2){
+                    var img = document.getElementById('display2');
+                    img.setAttribute('src', src);
+                }
+                else if(acao == 3){
+                    var img = document.getElementById('display3');
+                    img.setAttribute('src', src);
+                }        
+            });
+        }
+
+        function aplicarThreshold() {
+          var t = parseInt(document.getElementById('valor-threshold-2').value);
+
+          var w = imgAuxA.bitmap.width;
+          var h = imgAuxA.bitmap.height;
+          var imagem = imgAuxA.clone();
+          
+          for(var i = 0; i < w; i++) {
+            for(var j = 0; j < h; j++) {
+              var cor = imagem.getPixelColor(i, j);
+              var rgba = Jimp.intToRGBA(cor);
+              rgba.r = threshold_filter(rgba.r, t);
+              rgba.g = rgba.r;
+              rgba.b = rgba.r;
+              var hex = Jimp.rgbaToInt(rgba.r, rgba.g, rgba.b, rgba.a);
+              imagem.setPixelColor(hex, i, j);
+            }
+          }
+          //sobreposicao(imagem);
+          exibirImagem(imagem, 3);
+          console.log("Operação realizada com sucesso!");
+        }
+
+        function threshold_filter(v, t) {
+          if (v <= t) {
+            return 0;
+          } else {
+            return 255;
+          }
+        }
+
+        function aplicarNegativo() {
+            var pR, pG, pB, pA;
+            var imagem = imgAuxA.clone();
+
+            for (var w = 0; w < imgAuxA.bitmap.width; w++) {
+                for (var h = 0; h < imgAuxA.bitmap.height; h++) {
+                    var cor = imgAuxA.getPixelColor(w, h);
+                    var rgba = Jimp.intToRGBA(cor);
+
+                    pR = 255 - rgba.r;
+                    pG = 255 - rgba.g;
+                    pB = 255 - rgba.b;
+
+                    var novaCor = Jimp.rgbaToInt(pR, pG, pB, rgba.a);
+                    imagem.setPixelColor(novaCor, w, h);
+                }
+            }
+            exibirImagem(imagem, 3);
+        }
+
+        function aplicarAND() {
+            if(imgAuxA == null || imgAuxB == null) {
+                alert("Selecione as duas imagens para continuar!");
+            } else {
+                imgAuxC = imgAuxA;
+                for (var w = 0; w < imgAuxA.bitmap.width; w++) {
+                    for (var h = 0; h < imgAuxA.bitmap.height; h++) {
+                        var corA = imgAuxA.getPixelColor(w, h);
+                        var corB = imgAuxB.getPixelColor(w, h);
+                        var rgbaA = Jimp.intToRGBA(corA);
+                        var rgbaB = Jimp.intToRGBA(corB);
+
+                        var pixelR = rgbaA.r & rgbaB.r;
+                        var pixelG = rgbaA.g & rgbaB.g;
+                        var pixelB = rgbaA.b & rgbaB.b;
+                        var pixelA = rgbaA.a & rgbaB.a;
+
+                        var novaCor = Jimp.rgbaToInt(pixelR, pixelG, pixelB, pixelA);
+                        imgAuxC.setPixelColor(novaCor, w, h);
+                    }
+                }
+                exibirImagem(imgAuxC, 3);
+            }
+        }
+
+        function aplicarOR() {
+            if(imgAuxA == null || imgAuxB == null) {
+                alert("Selecione as duas imagens para continuar!");
+            } else {
+                imgAuxC = imgAuxA;
+                for (var w = 0; w < imgAuxA.bitmap.width; w++) {
+                    for (var h = 0; h < imgAuxA.bitmap.height; h++) {
+                        var corA = imgAuxA.getPixelColor(w, h);
+                        var corB = imgAuxB.getPixelColor(w, h);
+                        var rgbaA = Jimp.intToRGBA(corA);
+                        var rgbaB = Jimp.intToRGBA(corB);
+
+                        var pixelR = rgbaA.r | rgbaB.r;
+                        var pixelG = rgbaA.g | rgbaB.g;
+                        var pixelB = rgbaA.b | rgbaB.b;
+                        var pixelA = rgbaA.a | rgbaB.a;
+
+                        var novaCor = Jimp.rgbaToInt(pixelR, pixelG, pixelB, pixelA);
+                        imgAuxC.setPixelColor(novaCor, w, h);
+                    }
+                }
+                exibirImagem(imgAuxC, 3);
+            }
+        }
+
+        function aplicarSoma() {
+            if(imgAuxA == null || imgAuxB == null) {
+                alert("Selecione as duas imagens para continuar!");
+            } else {
+                imgAuxC = imgAuxA;
+                for (var w = 0; w < imgAuxA.bitmap.width; w++) {
+                    for (var h = 0; h < imgAuxA.bitmap.height; h++) {
+                        var corA = imgAuxA.getPixelColor(w, h);
+                        var corB = imgAuxB.getPixelColor(w, h);
+                        var rgbaA = Jimp.intToRGBA(corA);
+                        var rgbaB = Jimp.intToRGBA(corB);
+
+                        var pixelR = rgbaA.r + rgbaB.r;
+                        var pixelG = rgbaA.g + rgbaB.g;
+                        var pixelB = rgbaA.b + rgbaB.b;
+                        var pixelA = rgbaA.a + rgbaB.a;
+
+                        if(pixelR > 255) {
+                            pixelR = 255;
+                        }
+                        if(pixelG > 255) {
+                            pixelG = 255;
+                        }
+                        if(pixelB > 255) {
+                            pixelB = 255;
+                        }
+                        if(pixelA > 255) {
+                            pixelA = 255;
+                        }
+
+                        var novaCor = Jimp.rgbaToInt(pixelR, pixelG, pixelB, pixelA);
+                        imgAuxC.setPixelColor(novaCor, w, h);
+                    }
+                }
+                exibirImagem(imgAuxC, 3);
+            }
+        }
+
+         function aplicarSubtracao() {
+            if(imgAuxA == null || imgAuxB == null) {
+                alert("Selecione as duas imagens para continuar!");
+            } else {
+                imgAuxC = imgAuxA;
+                for (var w = 0; w < imgAuxA.bitmap.width; w++) {
+                    for (var h = 0; h < imgAuxA.bitmap.height; h++) {
+                        var corA = imgAuxA.getPixelColor(w, h);
+                        var corB = imgAuxB.getPixelColor(w, h);
+                        var rgbaA = Jimp.intToRGBA(corA);
+                        var rgbaB = Jimp.intToRGBA(corB);
+
+                        var pixelR = rgbaA.r - rgbaB.r;
+                        var pixelG = rgbaA.g - rgbaB.g;
+                        var pixelB = rgbaA.b - rgbaB.b;
+                        var pixelA = rgbaA.a - rgbaB.a;
+
+                        escalonamento(256);
+
+                        if(pixelR < 0) {
+                            pixelR = 0;
+                        } else if(pixelR > 255) {
+                            pixelR = 255;
+                        }
+                        if(pixelG < 0) {
+                            pixelG = 0;
+                        } else if(pixelG > 255) {
+                            pixelG = 255;
+                        }
+                        if(pixelB < 0) {
+                            pixelB = 0;
+                        } else if(pixelB > 255) {
+                            pixelB = 255;
+                        }
+                        if(pixelA < 0) {
+                            pixelA = 0;
+                        } else if(pixelA > 255) {
+                            pixelA = 255;
+                        }
+
+                        var novaCor = Jimp.rgbaToInt(pixelR, pixelG, pixelB, pixelA);
+                        imgAuxC.setPixelColor(novaCor, w, h);
+                    }
+                }
+                exibirImagem(imgAuxC, 3);
+            }
+        }
+
+        function aplicarMult() {
+            if(imgAuxA == null || imgAuxB == null) {
+                alert("Selecione as duas imagens para continuar!");
+            } else {
+                imgAuxC = imgAuxA;
+                for (var w = 0; w < imgAuxA.bitmap.width; w++) {
+                    for (var h = 0; h < imgAuxA.bitmap.height; h++) {
+                        var corA = imgAuxA.getPixelColor(w, h);
+                        var corB = imgAuxB.getPixelColor(w, h);
+                        var rgbaA = Jimp.intToRGBA(corA);
+                        var rgbaB = Jimp.intToRGBA(corB);
+
+                        var pixelR = rgbaA.r * rgbaB.r;
+                        var pixelG = rgbaA.g * rgbaB.g;
+                        var pixelB = rgbaA.b * rgbaB.b;
+                        var pixelA = rgbaA.a * rgbaB.a;
+
+                        if(pixelR < 0) {
+                            pixelR = 0;
+                        } else if(pixelR > 255) {
+                            pixelR = 255;
+                        }
+                        if(pixelG < 0) {
+                            pixelG = 0;
+                        } else if(pixelG > 255) {
+                            pixelG = 255;
+                        }
+                        if(pixelB < 0) {
+                            pixelB = 0;
+                        } else if(pixelB > 255) {
+                            pixelB = 255;
+                        }
+                        if(pixelA < 0) {
+                            pixelA = 0;
+                        } else if(pixelA > 255) {
+                            pixelA = 255;
+                        }
+
+                        var novaCor = Jimp.rgbaToInt(pixelR, pixelG, pixelB, pixelA);
+                        imgAuxC.setPixelColor(novaCor, w, h);
+                    }
+                }
+                exibirImagem(imgAuxC, 3);
+            }
+        }
+
+        function aplicarDivisao() {
+            if(imgAuxA == null || imgAuxB == null) {
+                alert("Selecione as duas imagens para continuar!");
+            } else {
+                imgAuxC = imgAuxA;
+                for (var w = 0; w < imgAuxA.bitmap.width; w++) {
+                    for (var h = 0; h < imgAuxA.bitmap.height; h++) {
+                        var corA = imgAuxA.getPixelColor(w, h);
+                        var corB = imgAuxB.getPixelColor(w, h);
+                        var rgbaA = Jimp.intToRGBA(corA);
+                        var rgbaB = Jimp.intToRGBA(corB);
+
+                        var pixelR = rgbaA.r / rgbaB.r;
+                        var pixelG = rgbaA.g / rgbaB.g;
+                        var pixelB = rgbaA.b / rgbaB.b;
+                        var pixelA = rgbaA.a / rgbaB.a;
+
+                        if(pixelR < 0) {
+                            pixelR = 0;
+                        } else if(pixelR > 255) {
+                            pixelR = 255;
+                        }
+                        if(pixelG < 0) {
+                            pixelG = 0;
+                        } else if(pixelG > 255) {
+                            pixelG = 255;
+                        }
+                        if(pixelB < 0) {
+                            pixelB = 0;
+                        } else if(pixelB > 255) {
+                            pixelB = 255;
+                        }
+                        if(pixelA < 0) {
+                            pixelA = 0;
+                        } else if(pixelA > 255) {
+                            pixelA = 255;
+                        }
+
+                        var novaCor = Jimp.rgbaToInt(pixelR, pixelG, pixelB, pixelA);
+                        imgAuxC.setPixelColor(novaCor, w, h);
+                    }
+                }
+                exibirImagem(imgAuxC, 3);
+            }
+        }
+
+    </script>
+
+</head>
+
+<body style="background-color:#282830">
+    <font color="#FEFEFE">
+    <div class="container">
+        <div class="row">
+        <div class="col-sm-12"> 
+            <h1>Projeto CG - Software para manipulação de imagens</h1>
+        </div>
+        </div>
+        <hr noshade></hr>
+        <div class="row">
+            <div class="col-sm-3">
+                <h4>Selecione a Imagem</h4>
+
+                <form role="form">
+                <div class="form-group">
+                    <br/>
+                    <p>Selecione a imagem A</p>
+                    <input type="file" id="img" onchange="mostrarImagem(this, 1)">
+                    <br/>
+                    <p>Selecione a imagem B</p>
+                    <input type="file" id="img" onchange="mostrarImagem(this, 2)">
+                </div>
+                </form>
+
+                <hr noshade></hr>
+                <h4>Operações</h4>
+
+                <form role="form">
+                <div class="form-group">
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarNegativo()">Negativo</button>
+                    
+                    <br/>
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarThreshold()">Threshold</button>
+                    
+                    <br/>
+                    <div class="input-group">
+                        <input type="number" class="form-control" placeholder="Valor Threshold" required value="50" id="valor-threshold-2">
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon glyphicon-picture"></span>
+                        </span>
+                    </div>
+
+                    <br/>
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarAND()">Operação lógica AND</button>
+                    
+                    <br/>
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarOR()">Operação lógica OR</button>
+
+                    <br/>
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarSoma()">Operação aritmética SOMA</button>
+
+                    <br/>
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarSubtracao()">Operação aritmética SUBTRAÇÃO</button>
+
+                    <br/>
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarMult()">Operação aritmética MULTIPLICAÇÃO</button>
+
+                    <br/>
+                    <button type="button" class="btn btn-success btn-block" onclick="aplicarDivisao()">Operação aritmética DIVISÃO</button>
+                </div>
+                </form>
+
+            </div>
+            <font color="#282830">
+            <div class="col-sm-9" style="background-color:#FEFEFE">
+                <h2>Resultado</h2>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <h4>Imagem Original A</h4>
+                        <img id="display1" align="center">
+                    </div>
+                    <div class="col-sm-4">
+                        <h4>Imagem Original B</h4>
+                        <img id="display2" align="center">
+                    </div>
+                    <div class="col-sm-4">
+                        <h4>Imagem Final</h4>
+                        <img id="display3" align="center">
+                    </div>
+                </div>
+                <br/>
+            </div>
+            </font>
+        </div>
+    </div>
+    </font>
+</body>
+</html>
